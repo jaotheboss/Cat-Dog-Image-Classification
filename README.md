@@ -1,4 +1,7 @@
 # Cat-Dog-Image-Classification
+
+![Cat and Dog](https://github.com/jaotheboss/Cat-Dog-Image-Classification/blob/master/dog-and-cat.jpeg)
+
 Using convolutional neural networks to distinguish between images of cats and dogs. 
 
 ## Objective:
