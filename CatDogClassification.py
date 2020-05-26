@@ -109,6 +109,7 @@ del test_data        # just to clean up memory
 # DATA MINING
 train_X, train_y = np.array(train_X), np.array(train_y)
 test_X, test_y = np.array(test_X), np.array(test_y)
+os.chdir(origin)
 
 # Building the Deep Learning model
 ## Three Block VGG Architecture model
@@ -239,7 +240,7 @@ test_generator = test_datagen.flow(test_X, test_y, batch_size = 32)
 int(model.evaluate_generator(test_generator)[1]*1000)/1000
 """
 
-origin = os.getcwd()
 os.chdir('models')
 model.save('catdog_classifier_v1')
+model.save_weights('catdog_classifier_v1') # about half the size
 os.chdir(origin)
