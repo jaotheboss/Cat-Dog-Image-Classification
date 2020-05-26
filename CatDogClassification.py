@@ -16,9 +16,9 @@ import numpy as np                               # images work better in arrays 
 import cv2                                       # for importing the image
 from keras import models                         # for building the deep learning model
 from keras import layers
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.preprocessing.image import ImageDataGenerator
-from keras.optimizers import SGD, RMSprop
+from keras.optimizers import SGD, RMSprop, Adadelta
 import random                                    # for randomizing the dataset
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
@@ -112,63 +112,71 @@ test_X, test_y = np.array(test_X), np.array(test_y)
 
 # Building the Deep Learning model
 ## Three Block VGG Architecture model
-model = models.Sequential()
+model = models.Sequential()        # models.load_model('path/to/location')
 model.add(layers.Conv2D(filters = 32,
        kernel_size = (3, 3),
        activation = 'relu',
        kernel_initializer = 'he_uniform', # or random_normal
-       padding = 'same',
        input_shape = (height, width, 3)))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.1))
+model.add(layers.Dropout(0.2))
 
 model.add(layers.Conv2D(filters = 64,
        kernel_size = (3, 3),
        activation = 'relu',
-       kernel_initializer = 'he_uniform',
-       padding = 'same'))
+       kernel_initializer = 'he_uniform'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.1))
+model.add(layers.Dropout(0.2))
 
 model.add(layers.Conv2D(filters = 128,
        kernel_size = (3, 3),
        activation = 'relu',
-       kernel_initializer = 'he_uniform',
-       padding = 'same'))
+       kernel_initializer = 'he_uniform'))
 model.add(layers.MaxPooling2D((2, 2)))
 
 model.add(layers.Flatten())
-model.add(layers.Dropout(0.1))
+model.add(layers.Dropout(0.2))
 model.add(layers.Dense(128, activation = 'relu'))
 model.add(layers.Dense(1, activation = 'sigmoid'))
 
 model.summary()
 
-sgd = SGD(learning_rate = 0.001, momentum = 0.9)
-rmsprop = RMSprop(learning_rate = 0.0001, rho = 0.9)
+rmsprop = RMSprop(learning_rate = 0.001, rho = 0.85)                   # 0.64        0.694
+adadelta = Adadelta(learning_rate = 0.8, rho = 0.95)                  # 0.62        0.598
+
+lr_reduction = ReduceLROnPlateau(monitor = 'val_acc',
+       patience = 2, 
+       verbose = 1, 
+       factor = 0.5, 
+       min_lr = 0.00001)
+early_stopping = EarlyStopping(monitor = 'val_loss', 
+       patience = 0, 
+       min_delta = 0.00001)
 
 model.compile(optimizer = rmsprop,
               loss = 'binary_crossentropy',
               metrics = ['acc'])
 
-train_datagen = ImageDataGenerator(rotation_range = 30, # data filter. rotates/flips/manipulates image that's passed through here
+train_datagen = ImageDataGenerator(rescale = 1/255,
+                                   rotation_range = 30, # data filter. rotates/flips/manipulates image that's passed through here
                                    width_shift_range = 0.1,
                                    height_shift_range = 0.1,
                                    shear_range = 0.1,
                                    zoom_range = 0.1,
                                    horizontal_flip = True)
-train_generator = train_datagen.flow(train_X, train_y, batch_size = 32)
+train_generator = train_datagen.flow(train_X, train_y, batch_size = 24)
 
 history = model.fit_generator(train_generator,
-                            steps_per_epoch = len(train_y)/32,                      # so the model trains per batch
+                            steps_per_epoch = len(train_y)/24,                      # so the model trains per batch
                             epochs = 5,
-                            callbacks = [EarlyStopping(monitor = 'val_loss', patience = 0, min_delta = 0.0001)])
+                            callbacks = [early_stopping, lr_reduction])
 
 y_pred = model.predict(test_X)
 y_pred = np.where(y_pred > 0.5, 1, 0)
 
 print(accuracy_score(test_y, y_pred))
 
+# PLOTTING RESULTS FROM THE NEURAL NETWORK
 def summarize_diagnostics(history):
 	# plot loss and accuracy
        plt.title('Cross Entropy Loss and Classification Accuracy')
@@ -176,6 +184,26 @@ def summarize_diagnostics(history):
        plt.plot(history.history['acc'], color = 'red', label = 'accuracy')
        plt.legend()
 summarize_diagnostics(history)
+
+## visualizing the mid training process
+def display_activation(activations, col_size, row_size, act_index): 
+    activation = activations[act_index]
+    activation_index=0
+    fig, ax = plt.subplots(row_size, col_size, figsize=(row_size*2.5,col_size*1.5))
+    for row in range(0,row_size):
+        for col in range(0,col_size):
+            ax[row][col].imshow(activation[0, :, :, activation_index], cmap='gray')
+            activation_index += 1
+
+layer_outputs = [layer.output for layer in model.layers]                            # recreating the model
+activation_model = models.Model(inputs = model.input, outputs = layer_outputs)      # because we have to use the Model class
+activations = activation_model.predict(train_X[1].reshape(1, 200, 200, 3))          # predicting one pic
+
+plt.imshow(train_X[1][:,:,0]) # plot the image at layer 0 (doesn't matter if its grayscale or not)
+display_activation(activations, 8, 4, 2)        # rows, columns, layer
+# check activations[i].shape[3] to see how many feature maps there are for layer i
+for i in range(len(activations)):
+    print(activations[i].shape)
 
 """
 Conventional training route
@@ -211,44 +239,7 @@ test_generator = test_datagen.flow(test_X, test_y, batch_size = 32)
 int(model.evaluate_generator(test_generator)[1]*1000)/1000
 """
 
-# Exploring Transfer Learning
-from keras.applications import VGG16
-
-model = VGG16(include_top=False, input_shape=(224, 224, 3))
-# mark loaded layers as not trainable
-for layer in model.layers:
-       layer.trainable = False
-model.add(layers.Flatten())
-model.add(layers.Dense(128, activation = 'relu',
-                            kernel_initializer = 'he_uniform'))
-model.add(layers.Dense(1, activation = 'sigmoid'))
-
-model.compile(optimizer = sgd,
-              loss = 'binary_crossentropy',
-              metrics = ['acc'])
-              
-train_datagen = ImageDataGenerator(rotation_range = 40, # data filter. rotates/flips/manipulates image that's passed through here
-                                   width_shift_range = 0.2,
-                                   height_shift_range = 0.2,
-                                   shear_range = 0.2,
-                                   zoom_range = 0.2,
-                                   horizontal_flip = True)
-train_generator = train_datagen.flow(train_X, train_y, batch_size = 32)
-
-history = model.fit_generator(train_generator,
-                            steps_per_epoch = len(train_y)/32,                      # so the model trains per batch
-                            epochs = 5,
-                            callbacks = [EarlyStopping(monitor = 'val_loss', patience = 0, min_delta = 0.0001)])
-
-y_pred = model.predict(test_X)
-y_pred = np.where(y_pred > 0.5, 1, 0)
-
-print(accuracy_score(test_y, y_pred))
-
-def summarize_diagnostics(history):
-	# plot loss and accuracy
-       plt.title('Cross Entropy Loss and Classification Accuracy')
-       plt.plot(history.history['loss'], color = 'blue', label = 'loss')
-       plt.plot(history.history['acc'], color = 'red', label = 'accuracy')
-       plt.legend()
-summarize_diagnostics(history)
+origin = os.getcwd()
+os.chdir('models')
+model.save('catdog_classifier_v1')
+os.chdir(origin)
