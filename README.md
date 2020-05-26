@@ -9,16 +9,16 @@ Simple introduction and practice into the world of deep learning with images. In
 
 ## Left To-do:
 - [x] Improve Accuracy to above 0.7
-- [ ] Mid-Model Visualisations
-- [ ] Post-Prediction Visualisations
+- [ ] Mid-Model Visualisations 
+- [x] Post-Prediction Visualisations
 
-#### Mid-Model Visualisations to try:
-1. https://github.com/raghakot/keras-vis
+#### Visualisations Packages for c-NN:
+1. https://github.com/raghakot/keras-vis (be sure to install the right version. some methods would download the deprecated version)
 
 #### Post-Prediction Visualisations to try:
-1. https://neilnie.com/2018/04/13/visualizing-the-steering-model-with-attention-maps/
+1. https://neilnie.com/2018/04/13/visualizing-the-steering-model-with-attention-maps/ (dependent on keras-vis)
 
-2. https://www.machinecurve.com/index.php/2019/11/25/visualizing-keras-cnn-attention-saliency-maps/
+2. https://www.machinecurve.com/index.php/2019/11/25/visualizing-keras-cnn-attention-saliency-maps/ (dependent on keras-vis)
 
 ## Methodology:
 In this project, i use a 3 block VGG architecture convnet model to classify the images. VGG has been a classic image classification architecture for quite some time now and i intend to play around with the other parameters to yield better results from smaller datasets.
