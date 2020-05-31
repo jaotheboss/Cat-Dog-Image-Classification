@@ -1,6 +1,6 @@
 # Cat-Dog-Image-Classification
 
-![Cat and Dog](https://github.com/jaotheboss/Cat-Dog-Image-Classification/blob/master/dog-and-cat.jpeg)
+![Cat](https://github.com/jaotheboss/Cat-Dog-Image-Classification/blob/master/cat-gradcam.jpeg)
 
 Using convolutional neural networks to distinguish between images of cats and dogs. 
 
@@ -21,7 +21,7 @@ Simple introduction and practice into the world of deep learning with images. In
 2. https://www.machinecurve.com/index.php/2019/11/25/visualizing-keras-cnn-attention-saliency-maps/ (dependent on keras-vis)
 
 ## Methodology:
-In this project, i use a 3 block VGG architecture convnet model to classify the images. VGG has been a classic image classification architecture for quite some time now and i intend to play around with the other parameters to yield better results from smaller datasets.
+In this project, I use a 3 block VGG architecture convnet model to classify the images. VGG has been a classic image classification architecture for quite some time now and i intend to play around with the other parameters to yield better results from smaller datasets.
 
 ## Notes:
 1. There are various ways to import an image into data. For this project, i used OpenCV to import the image. This is because using Keras's in-built conversion function can cause problems with the model according to some research articles online.
