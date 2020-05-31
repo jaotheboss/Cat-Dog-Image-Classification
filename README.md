@@ -1,6 +1,6 @@
 # Cat-Dog-Image-Classification
 
-![Cat](https://github.com/jaotheboss/Cat-Dog-Image-Classification/blob/master/cat-gradcam.jpeg)
+![Cat](https://github.com/jaotheboss/Cat-Dog-Image-Classification/blob/master/cat%20gradcam.png)
 
 Using convolutional neural networks to distinguish between images of cats and dogs. 
 
